@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NoBrokerage.com - AI Engineer Intern Task
 
-## Getting Started
+This is an intelligent, GPT-like chat interface that understands natural language queries about real estate and responds with a factual summary and a list of relevant properties from a CSV database.
 
-First, run the development server:
+**Live Demo Link:** [Insert your Vercel/Netlify link here - *optional but recommended*]
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Project Goal
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The goal was to build a Chat + Search system to help users discover properties using natural language instead of traditional filters. The AI parses user queries, extracts filters, searches a local CSV dataset, and generates a grounded summary of the results.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ⚙️ Tech Stack
 
-## Learn More
+* **Framework:** Next.js (React)
+* **Backend:** Next.js API Routes
+* **Language:** TypeScript
+* **AI / NLP:** Google Gemini Pro
+* **Data Store:** In-memory JSON store loaded from CSVs (`csv-parser`)
+* **Styling:** Tailwind CSS
+* **UI:** React (`useState`)
 
-To learn more about Next.js, take a look at the following resources:
+## ✨ Core Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+* **Natural Language Query Understanding:** Parses queries like "3BHK in Pune under 1.2 Cr" into JSON filters (`{ "bhk": 3, "city": "Pune", "budget": 12000000 }`).
+* **CSV Data Retrieval:** Filters an in-memory database loaded from 4 local CSV files.
+* **Grounded Summarization:** Generates a 2-4 sentence summary *only* using the filtered CSV data, with no hallucination.
+* **Dynamic Property Cards:** Displays matching properties in a clean, scrollable horizontal list.
+* **ChatGPT-like UI:** A clean, responsive chat interface.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Setup & Run Local
 
-## Deploy on Vercel
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/](https://github.com/)[your-username]/[your-repo-name].git
+    cd [your-repo-name]
+    ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3.  **Set up environment variables:**
+    * Create a file named `.env.local` in the root.
+    * Add your Google API key (see `.env.example`):
+        ```
+        GOOGLE_API_KEY=YOUR_API_KEY_HERE
+        ```
+
+4.  **Add your data:**
+    * Place your CSV files (e.g., `project.csv`) inside the `/data` folder.
+    * **Important:** You may need to update the `Project` interface in `/lib/data-loader.ts` to match your exact CSV columns.
+
+5.  **Run the development server:**
+    ```bash
+    npm run dev
+    ```
+
+Open [http://localhost:3000](http://localhost:3000) to see the application.

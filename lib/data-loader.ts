@@ -36,9 +36,6 @@ export const loadProjects = async (): Promise<Project[]> => {
     fs.createReadStream(csvFilePath)
       .pipe(csv())
       .on('data', (data) => {
-        // Here, you would transform the raw CSV row `data` into your `Project` type.
-        // This might involve converting strings to numbers, etc.
-        // For now, we'll assume a direct mapping.
         results.push(data); 
       })
       .on('end', () => {

@@ -1,26 +1,35 @@
 // In /app/api/chat/route.ts
 
 import { NextResponse } from 'next/server';
-import { loadProjects, getProjects } from '@/lib/data-loader';
+import { loadProjects, getProjects, Project } from '@/lib/data-loader';
+import { parseUserQuery, generateSummary, QueryFilters } from '@/lib/gemini';
 
 // Ensure data is loaded once when the server starts
-// The `await` here works because this is a top-level operation in the module.
 await loadProjects();
 
 export async function POST(request: Request) {
   try {
-    // Today, we expect a request body with specific filters, like:
-    // { "bhk": 3, "city": "Pune", "budget": 12000000 }
-    const filters = await request.json();
+    // 1. Get the user's natural language message
+    const body = await request.json();
+    const userMessage: string = body.message;
 
-    console.log("Received filters:", filters);
+    if (!userMessage) {
+      return NextResponse.json({ error: 'No message provided.' }, { status: 400 });
+    }
 
+    console.log("Received message:", userMessage);
+
+    // 2. Call Gemini to parse the message into filters
+    const filters: QueryFilters = await parseUserQuery(userMessage);
+    console.log("Parsed filters:", filters);
+
+    // 3. Use the filters to search our data (same logic as Day 1)
     const allProjects = getProjects();
 
-    // The core filtering logic. This is the "search engine".
     const filteredProjects = allProjects.filter(project => {
       let isMatch = true;
 
+      // We need to be careful here, as fields might be missing
       if (filters.city && project.city.toLowerCase() !== filters.city.toLowerCase()) {
         isMatch = false;
       }
@@ -30,16 +39,24 @@ export async function POST(request: Request) {
       if (filters.budget && project.price > filters.budget) {
         isMatch = false;
       }
-      // ... you can add more filter conditions here
+      if (filters.possessionStatus && project.possessionStatus !== filters.possessionStatus) {
+        isMatch = false;
+      }
+      if (filters.locality && !project.locality.toLowerCase().includes(filters.locality.toLowerCase())) {
+        isMatch = false;
+      }
+      // ... add more filter conditions as needed
 
       return isMatch;
     });
 
-    // We'll just return the raw data for now.
-    // Tomorrow, we'll add the AI summary.
+    // 4. Call Gemini to generate a summary of the results
+    const summary = await generateSummary(userMessage, filteredProjects);
+
+    // 5. Return the full response
     return NextResponse.json({
-      summary: `Found ${filteredProjects.length} matching properties.`, // A temporary summary
-      properties: filteredProjects.slice(0, 5), // Return top 5 matches
+      summary: summary,
+      properties: filteredProjects, // You can still slice this, e.g., .slice(0, 5)
     });
 
   } catch (error) {
