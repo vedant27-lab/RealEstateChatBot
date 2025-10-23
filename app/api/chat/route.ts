@@ -1,15 +1,23 @@
 // In /app/api/chat/route.ts
 
 import { NextResponse } from 'next/server';
-import { loadProjects, getProjects, Project } from '@/lib/data-loader';
-import { parseUserQuery, generateSummary, QueryFilters } from '@/lib/gemini';
+import { loadProjects, getProjects, FullProperty } from '@/lib/data-loader';
+import { parseUserQuery, generateSummary, QueryFilters } from '@/lib/ai';
 
-// Ensure data is loaded once when the server starts
-await loadProjects();
+// Turn this on to see *why* properties are failing the filter
+const DEBUG_FILTER = true;
+
+// Ensure data is loaded once
+await (async () => {
+  try {
+    await loadProjects();
+  } catch (err) {
+    console.error("Failed to load projects on server start:", err);
+  }
+})();
 
 export async function POST(request: Request) {
   try {
-    // 1. Get the user's natural language message
     const body = await request.json();
     const userMessage: string = body.message;
 
@@ -19,44 +27,78 @@ export async function POST(request: Request) {
 
     console.log("Received message:", userMessage);
 
-    // 2. Call Gemini to parse the message into filters
     const filters: QueryFilters = await parseUserQuery(userMessage);
     console.log("Parsed filters:", filters);
 
-    // 3. Use the filters to search our data (same logic as Day 1)
     const allProjects = getProjects();
 
+    // --- NEW: Robust Filtering Logic ---
+
+    // 1. Clean the filters from the AI one time
+    const cityFilter = filters.city ? filters.city.toLowerCase().trim() : null;
+    const bhkFilter = filters.bhk ? String(filters.bhk) : null;
+    const budgetFilter = filters.budget || null;
+    const statusFilter = filters.possessionStatus ? filters.possessionStatus.toLowerCase().trim() : null;
+    const localityFilter = filters.locality ? filters.locality.toLowerCase().trim() : null;
+
     const filteredProjects = allProjects.filter(project => {
-      let isMatch = true;
+      // 2. Clean the data for *each* project
+      // We trim() to remove spaces and toLowerCase() for case-insensitive matching
+      const projectAddress = project.fullAddress.toLowerCase();
+      const projectBHK = project.bhk.trim();
+      const projectStatus = project.status.toLowerCase().trim();
 
-      // We need to be careful here, as fields might be missing
-      if (filters.city && project.city.toLowerCase() !== filters.city.toLowerCase()) {
-        isMatch = false;
+      // --- DEBUG LOGIC ---
+      if (DEBUG_FILTER) {
+        console.log(`\n--- Checking Project: ${project.projectName} ---`);
       }
-      if (filters.bhk && project.bhk !== filters.bhk) {
-        isMatch = false;
+      
+      // 3. Run the checks
+      if (cityFilter) {
+        const match = projectAddress.includes(cityFilter);
+        if (DEBUG_FILTER) console.log(`City Check: ${match} (Looking for '${cityFilter}' in '${projectAddress}')`);
+        if (!match) return false;
       }
-      if (filters.budget && project.price > filters.budget) {
-        isMatch = false;
+      
+      if (bhkFilter) {
+        // Use startsWith() to match "4BHK" or "4 BHK" from a "4"
+        const match = projectBHK.startsWith(bhkFilter);
+        if (DEBUG_FILTER) console.log(`BHK Check: ${match} (Does '${projectBHK}' start with '${bhkFilter}')`);
+        if (!match) return false;
       }
-      if (filters.possessionStatus && project.possessionStatus !== filters.possessionStatus) {
-        isMatch = false;
+      
+      if (budgetFilter) {
+        const match = project.price <= budgetFilter;
+        if (DEBUG_FILTER) console.log(`Budget Check: ${match} (${project.price} <= ${budgetFilter})`);
+        if (!match) return false;
       }
-      if (filters.locality && !project.locality.toLowerCase().includes(filters.locality.toLowerCase())) {
-        isMatch = false;
+      
+      if (statusFilter) {
+        const match = projectStatus === statusFilter;
+        if (DEBUG_FILTER) console.log(`Status Check: ${match} ('${projectStatus}' === '${statusFilter}')`);
+        if (!match) return false;
       }
-      // ... add more filter conditions as needed
 
-      return isMatch;
+      if (localityFilter) {
+        const match = projectAddress.includes(localityFilter);
+        if (DEBUG_FILTER) console.log(`Locality Check: ${match} (Looking for '${localityFilter}' in '${projectAddress}')`);
+        if (!match) return false;
+      }
+
+      // If it passed all checks, it's a match!
+      if (DEBUG_FILTER) console.log(">>> MATCH FOUND <<<");
+      return true;
     });
 
-    // 4. Call Gemini to generate a summary of the results
+    // --- End of Filtering Logic ---
+
+    console.log(`Found ${filteredProjects.length} matching properties.`);
+
     const summary = await generateSummary(userMessage, filteredProjects);
 
-    // 5. Return the full response
     return NextResponse.json({
       summary: summary,
-      properties: filteredProjects, // You can still slice this, e.g., .slice(0, 5)
+      properties: filteredProjects.slice(0, 10),
     });
 
   } catch (error) {

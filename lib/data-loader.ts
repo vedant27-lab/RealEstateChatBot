@@ -92,7 +92,7 @@ export const loadProjects = async (): Promise<FullProperty[]> => {
       loadCSV<Project>('project.csv'),
       loadCSV<ProjectAddress>('ProjectAddress.csv'),
       loadCSV<ProjectConfiguration>('ProjectConfiguration.csv'),
-      loadCSV<ProjectConfigurationVariant>('ProjectConfigurationVarient.csv')
+      loadCSV<ProjectConfigurationVariant>('ProjectConfigurationVariant.csv')
     ]);
 
     const projectMap = new Map(projects.map(p => [p.id, p]));
@@ -126,8 +126,7 @@ export const loadProjects = async (): Promise<FullProperty[]> => {
         carpetArea: variant.carpetArea,
         aboutProperty: variant.aboutProperty,
         floorPlanImage: variant.floorPlanImage,
-        propertyImages: variant.propertyImages ? variant.propertyImages.split(',') : [],
-      });
+        propertyImages: variant.propertyImages ? JSON.parse(variant.propertyImages) : [],      });
     }
 
     fullProperties = mergedProperties;
