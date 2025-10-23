@@ -1,11 +1,8 @@
-// In /lib/data-loader.ts
 
 import fs from 'fs';
 import path from 'path';
 import csv from 'csv-parser';
 
-// --- Define all our data structures ---
-// These interfaces must match your CSV columns *exactly*
 
 interface Project {
   id: string; // The key
@@ -14,38 +11,38 @@ interface Project {
   projectCategory: string;
   status: string;
   possessionDate: string;
-  cityId: string; // We'll need to map this to a city name if you have a city.csv
+  cityId: string;  
 }
 
 interface ProjectAddress {
   id: string;
-  projectId: string; // Foreign key to Project
+  projectId: string;
   fullAddress: string;
   pincode: string;
   landmark: string;
 }
 
 interface ProjectConfiguration {
-  id: string; // The key
-  projectId: string; // Foreign key to Project
-  type: string; // This is probably the BHK (e.g., "3BHK")
+  id: string; 
+  projectId: string; 
+  type: string; 
   customBHK: string;
 }
 
 interface ProjectConfigurationVariant {
   id: string;
-  configurationId: string; // Foreign key to ProjectConfiguration
+  configurationId: string; 
   bathrooms: string;
   floorPlanImage: string;
   carpetArea: string;
   price: string;
-  propertyImages: string; // This is probably a comma-separated list of URLs
+  propertyImages: string; 
   aboutProperty: string;
 }
 
 export interface FullProperty {
 
-  id: string; // We'll use the Variant ID as the unique key
+  id: string; 
   projectId: string;
   projectName: string;
   status: string;
@@ -54,14 +51,13 @@ export interface FullProperty {
   fullAddress: string;
   pincode: string;
 
-  bhk: string; // e.g., "3BHK"
-
+  bhk: string;
   price: number;
   bathrooms: number;
   carpetArea: string;
   aboutProperty: string;
   floorPlanImage: string;
-  propertyImages: string[]; // We will split the string into an array
+  propertyImages: string[]; 
 }
 
 async function loadCSV<T>(filename: string): Promise<T[]> {
@@ -103,23 +99,23 @@ export const loadProjects = async (): Promise<FullProperty[]> => {
     
     for (const variant of variants) {
       const config = configMap.get(variant.configurationId);
-      if (!config) continue; // Skip if no parent config
+      if (!config) continue; 
 
       const project = projectMap.get(config.projectId);
-      if (!project) continue; // Skip if no parent project
+      if (!project) continue; 
       
       const address = addressMap.get(config.projectId);
-      if (!address) continue; // Skip if no parent address
+      if (!address) continue; 
 
       mergedProperties.push({
-        id: variant.id, // Use variant ID as the unique key
+        id: variant.id, 
         projectId: project.id,
         projectName: project.projectName,
         status: project.status,
         possessionDate: project.possessionDate,
         fullAddress: address.fullAddress,
         pincode: address.pincode,
-        bhk: config.type, // Assuming 'type' is the BHK
+        bhk: config.type, 
         
         price: parseInt(variant.price, 10) || 0,
         bathrooms: parseInt(variant.bathrooms, 10) || 0,
@@ -135,7 +131,7 @@ export const loadProjects = async (): Promise<FullProperty[]> => {
 
   } catch (error) {
     console.error("Error loading or merging CSV data:", error);
-    return []; // Return empty on error
+    return []; 
   }
 };
 

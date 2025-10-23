@@ -1,17 +1,13 @@
-// In /lib/ai.ts
 
 import Groq from 'groq-sdk';
 import { FullProperty } from './data-loader';
 
-// 1. Initialize Groq client
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || "",
 });
 
-// 2. Use a free, fast model
 const MODEL_NAME = "llama-3.1-8b-instant";
 
-// This interface is the same
 export interface QueryFilters {
   city?: string;
   bhk?: number;
@@ -20,7 +16,6 @@ export interface QueryFilters {
   locality?: string;
 }
 
-// --- Function 1: Query Parser ---
 export const parseUserQuery = async (userQuery: string): Promise<QueryFilters> => {
   const prompt = `
     You are an expert real estate query parser. Your job is to extract filter criteria
@@ -44,7 +39,6 @@ export const parseUserQuery = async (userQuery: string): Promise<QueryFilters> =
     5. If no filters are found, return an empty JSON object {}.
   `;
   try {
-    // 3. This call is identical to OpenAI's
     const response = await groq.chat.completions.create({
       model: MODEL_NAME,
       messages: [
@@ -66,7 +60,6 @@ export const parseUserQuery = async (userQuery: string): Promise<QueryFilters> =
   }
 };
 
-// --- Function 2: Summary Generator ---
 export const generateSummary = async (query: string, properties: FullProperty[]): Promise<string> => {
   if (properties.length === 0) {
     return "No properties matched your criteria. You could try expanding your search, for example, by increasing your budget or looking in a nearby locality.";
